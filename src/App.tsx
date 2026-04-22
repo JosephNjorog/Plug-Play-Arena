@@ -21,6 +21,16 @@ import ArenaHostPage from "./pages/ArenaHostPage";
 import ArenaJoinPage from "./pages/ArenaJoinPage";
 import ArenaPlayerPage from "./pages/ArenaPlayerPage";
 import ArenaLayout from "./pages/ArenaLayout";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminEvents from "./pages/admin/AdminEvents";
+import AdminGames from "./pages/admin/AdminGames";
+import AdminChallenges from "./pages/admin/AdminChallenges";
+import AdminPlayers from "./pages/admin/AdminPlayers";
+import AdminArena from "./pages/admin/AdminArena";
+import AdminSubmissions from "./pages/admin/AdminSubmissions";
+import AdminNFTs from "./pages/admin/AdminNFTs";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +58,17 @@ const App = () => (
               <Route index element={<ArenaHostPage />} />
               <Route path="join/:code?" element={<ArenaJoinPage />} />
               <Route path="play" element={<ArenaPlayerPage />} />
+            </Route>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="games" element={<AdminGames />} />
+              <Route path="challenges" element={<AdminChallenges />} />
+              <Route path="players" element={<AdminPlayers />} />
+              <Route path="arena" element={<AdminArena />} />
+              <Route path="submissions" element={<AdminSubmissions />} />
+              <Route path="nfts" element={<AdminNFTs />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
