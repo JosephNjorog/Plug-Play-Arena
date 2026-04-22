@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Calendar, Gamepad2, Sparkles, Wallet, Trophy, Users } from 'lucide-react';
@@ -6,7 +7,8 @@ import { AppNavbar } from '@/components/avalanche/AppNavbar';
 import { PersonaSelector } from '@/components/avalanche/PersonaSelector';
 import { GameCard } from '@/components/avalanche/GameCard';
 import { EventCard } from '@/components/avalanche/EventCard';
-import { AVALANCHE_GAMES, AVALANCHE_EVENTS, eventsByStatus } from '@/lib/avalanche';
+import { AvalancheGame, AvalancheEvent, dbRowToGame, dbRowToEvent } from '@/lib/avalanche';
+import { supabase } from '@/integrations/supabase/client';
 import { usePlayer } from '@/lib/playerContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,10 +16,26 @@ export default function HomePage() {
   const { user, profile } = usePlayer();
   const navigate = useNavigate();
 
-  const featuredMissions = AVALANCHE_GAMES.filter(g => g.status === 'live').slice(0, 3);
-  const liveEvents = eventsByStatus('live');
-  const upcomingEvents = eventsByStatus('upcoming').slice(0, 2);
-  const featuredEvents = [...liveEvents, ...upcomingEvents].slice(0, 3);
+  const [featuredMissions, setFeaturedMissions] = useState<AvalancheGame[]>([]);
+  const [featuredEvents, setFeaturedEvents] = useState<AvalancheEvent[]>([]);
+  const [counts, setCounts] = useState({ games: 0, events: 0 });
+
+  useEffect(() => {
+    supabase.from('games').select('*').eq('status', 'live').limit(3)
+      .then(({ data }) => {
+        if (data) setFeaturedMissions(data.map(dbRowToGame));
+      });
+
+    supabase.from('events').select('*').in('status', ['live', 'draft']).order('starts_at').limit(3)
+      .then(({ data }) => {
+        if (data) setFeaturedEvents(data.map(dbRowToEvent));
+      });
+
+    Promise.all([
+      supabase.from('games').select('id', { count: 'exact', head: true }),
+      supabase.from('events').select('id', { count: 'exact', head: true }),
+    ]).then(([g, e]) => setCounts({ games: g.count ?? 0, events: e.count ?? 0 }));
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -62,8 +80,8 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Stat icon={<Calendar className="h-4 w-4" />} value={`${AVALANCHE_EVENTS.length}`} label="Events" />
-              <Stat icon={<Gamepad2 className="h-4 w-4" />} value={`${AVALANCHE_GAMES.length}`} label="Missions" />
+              <Stat icon={<Calendar className="h-4 w-4" />} value={`${counts.events}`} label="Events" />
+              <Stat icon={<Gamepad2 className="h-4 w-4" />} value={`${counts.games}`} label="Missions" />
               <Stat icon={<Users className="h-4 w-4" />} value="5" label="Personas" />
               <Stat icon={<Trophy className="h-4 w-4" />} value="$20K+" label="Reward pool" />
             </div>
@@ -97,7 +115,9 @@ export default function HomePage() {
             ctaHref="/events"
           />
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {featuredEvents.map(e => <EventCard key={e.id} event={e} />)}
+            {featuredEvents.length === 0 ? (
+              <div className="col-span-3 text-sm text-muted-foreground py-8 text-center">No live events right now — check back soon.</div>
+            ) : featuredEvents.map(e => <EventCard key={e.id} event={e} />)}
           </div>
         </div>
       </section>
@@ -117,7 +137,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured rewards */}
+      {/* Rewards */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-12">
           <h2 className="font-display text-2xl tracking-wider">Rewards that matter</h2>
