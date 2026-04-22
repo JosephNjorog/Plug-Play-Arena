@@ -1,0 +1,1 @@
+ALTER TYPE public.submission_kind ADD VALUE IF NOT EXISTS 'custom';

@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 6% 9%;
+    --foreground: 240 10% 97%;
+
+    --card: 240 6% 11%;
+    --card-foreground: 240 10% 97%;
+
+    --popover: 240 6% 11%;
+    --popover-foreground: 240 10% 97%;
+
+    --primary: 354 100% 61%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 56% 45%;
+    --secondary-foreground: 240 10% 97%;
+
+    --muted: 240 5% 16%;
+    --muted-foreground: 240 5% 55%;
+
+    --accent: 220 56% 45%;
+    --accent-foreground: 240 10% 97%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 354 100% 61%;
+
+    --radius: 0.5rem;
+
+    /* Team colors */
+    --team-red: 354 100% 61%;
+    --team-blue: 220 56% 45%;
+    --team-green: 145 70% 45%;
+    --team-yellow: 45 100% 55%;
+
+    /* Glows - subtle */
+    --glow-primary: 0 0 12px hsl(354 100% 61% / 0.3);
+    --glow-red: 0 0 10px hsl(354 100% 61% / 0.4);
+    --glow-blue: 0 0 10px hsl(220 56% 45% / 0.4);
+    --glow-green: 0 0 10px hsl(145 70% 45% / 0.4);
+    --glow-yellow: 0 0 10px hsl(45 100% 55% / 0.4);
+
+    --font-display: 'Kanit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    --sidebar-background: 240 6% 11%;
+    --sidebar-foreground: 240 10% 97%;
+    --sidebar-primary: 354 100% 61%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 16%;
+    --sidebar-accent-foreground: 240 10% 97%;
+    --sidebar-border: 240 5% 18%;
+    --sidebar-ring: 354 100% 61%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .neon-text {
+    text-shadow: 0 0 8px hsl(354 100% 61% / 0.4);
+  }
+  .neon-border {
+    box-shadow: inset 0 0 12px hsl(354 100% 61% / 0.04), 0 0 8px hsl(354 100% 61% / 0.06);
+  }
+  .grid-tile {
+    @apply transition-all duration-100 cursor-pointer rounded-[2px];
+    border: 1px solid hsl(240 5% 18% / 0.3);
+  }
+  .grid-tile:hover {
+    @apply scale-105 z-10;
+    box-shadow: 0 0 6px hsl(354 100% 61% / 0.25);
+  }
+  .tile-red { background-color: hsl(var(--team-red)); box-shadow: var(--glow-red); }
+  .tile-blue { background-color: hsl(var(--team-blue)); box-shadow: var(--glow-blue); }
+  .tile-green { background-color: hsl(var(--team-green)); box-shadow: var(--glow-green); }
+  .tile-yellow { background-color: hsl(var(--team-yellow)); box-shadow: var(--glow-yellow); }
+  .tile-empty { background-color: hsl(var(--muted)); }
+  .tile-bonus {
+    background-color: hsl(45 100% 55% / 0.3);
+    border: 1px solid hsl(45 100% 55% / 0.5);
+    animation: pulse-tile 1.5s ease-in-out infinite;
+  }
+  .tile-blocked {
+    background-color: hsl(240 5% 12%);
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+}
+
+@keyframes pulse-tile {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes grid-claim {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-claim {
+  animation: grid-claim 0.15s ease-out;
+}

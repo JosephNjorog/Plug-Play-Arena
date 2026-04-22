@@ -1,0 +1,4 @@
+project_id = "hhaovquxqoxelzzpgypm"
+
+[functions.deploy-nft-contract]
+verify_jwt = false
