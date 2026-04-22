@@ -3,7 +3,8 @@ import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { AppNavbar } from '@/components/avalanche/AppNavbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AVALANCHE_GAMES, AVALANCHE_EVENTS } from '@/lib/avalanche';
+import { AvalancheGame, AvalancheEvent, dbRowToGame, dbRowToEvent } from '@/lib/avalanche';
+import { supabase } from '@/integrations/supabase/client';
 import { usePlayer } from '@/lib/playerContext';
 import { ArrowLeft, Sparkles, Trophy, Clock, Zap, RefreshCw, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,8 +31,20 @@ export default function MissionPlayPage() {
   const eventId = params.get('event') || undefined;
 
   const { user, submitMission } = usePlayer();
-  const game = AVALANCHE_GAMES.find(g => g.id === gameId);
-  const event = eventId ? AVALANCHE_EVENTS.find(e => e.id === eventId) : null;
+  const [game, setGame] = useState<AvalancheGame | null | undefined>(undefined);
+  const [event, setEvent] = useState<AvalancheEvent | null>(null);
+
+  useEffect(() => {
+    if (!gameId) { setGame(null); return; }
+    supabase.from('games').select('*').eq('id', gameId).maybeSingle()
+      .then(({ data }) => setGame(data ? dbRowToGame(data) : null));
+  }, [gameId]);
+
+  useEffect(() => {
+    if (!eventId) return;
+    supabase.from('events').select('*').eq('id', eventId).maybeSingle()
+      .then(({ data }) => { if (data) setEvent(dbRowToEvent(data)); });
+  }, [eventId]);
 
   const flagship = game && isFlagship(game.id) ? FLAGSHIP_MISSIONS[game.id] : null;
   const genericSteps = useMemo(
@@ -84,6 +97,15 @@ export default function MissionPlayPage() {
     }, 1000);
     return () => clearInterval(t);
   }, [running]);
+
+  if (game === undefined) {
+    return (
+      <div className="min-h-screen">
+        <AppNavbar />
+        <div className="mx-auto max-w-md px-4 py-16 text-center text-sm text-muted-foreground">Loading mission…</div>
+      </div>
+    );
+  }
 
   if (!game) {
     return (
