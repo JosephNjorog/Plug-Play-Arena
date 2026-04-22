@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AppNavbar } from '@/components/avalanche/AppNavbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ACCENT_CLASS, AvalancheChallenge, TIER_BADGE, challengeBySlug } from '@/lib/challenges';
+import { ACCENT_CLASS, AvalancheChallenge, TIER_BADGE, dbRowToChallenge } from '@/lib/challenges';
 import { StablecoinSimulator } from '@/components/avalanche/StablecoinSimulator';
 import { StablecoinState, evaluate } from '@/lib/stablecoinEngine';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,8 +18,14 @@ type MintStatus = 'idle' | 'minting' | 'minted' | 'error';
 export default function ChallengePage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
-  const challenge = useMemo(() => challengeBySlug(slug), [slug]);
+  const [challenge, setChallenge] = useState<AvalancheChallenge | null | undefined>(undefined);
   const { user, profile, refreshNfts, refreshProfile } = usePlayer();
+
+  useEffect(() => {
+    if (!slug) { setChallenge(null); return; }
+    supabase.from('challenges').select('*').eq('slug', slug).maybeSingle()
+      .then(({ data }) => setChallenge(data ? dbRowToChallenge(data) : null));
+  }, [slug]);
 
   const [stepDone, setStepDone] = useState<Record<number, boolean>>({});
   const [values, setValues] = useState<Record<string, string>>({});
@@ -59,6 +65,10 @@ export default function ChallengePage() {
       .eq('user_id', user.id).eq('challenge_id', challenge.id).maybeSingle()
       .then(({ data }) => { if (data?.tx_hash) { setMintStatus('minted'); setMintTx(data.tx_hash); } });
   }, [challenge, user, slug, navigate, profile?.wallet_address]);
+
+  if (challenge === undefined) {
+    return <div className="min-h-screen"><AppNavbar /><div className="mx-auto max-w-3xl px-4 py-20 text-center text-muted-foreground">Loading challenge…</div></div>;
+  }
 
   if (!challenge) {
     return <div className="min-h-screen"><AppNavbar /><div className="mx-auto max-w-3xl px-4 py-20 text-center text-muted-foreground">Challenge not found. <Link to="/library" className="text-primary underline">Back to library</Link></div></div>;
