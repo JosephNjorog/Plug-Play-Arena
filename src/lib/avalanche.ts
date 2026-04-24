@@ -203,7 +203,12 @@ export function dbRowToEvent(row: {
     date: row.starts_at ? new Date(row.starts_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'TBC',
     startTime: startMs,
     endTime: endMs,
-    format: (row.format?.toUpperCase() as EventFormat) || 'IRL',
+    format: (() => {
+      const f = row.format?.toLowerCase();
+      if (f === 'zoom' || f === 'virtual' || f === 'online') return 'Zoom';
+      if (f === 'hybrid') return 'Hybrid';
+      return 'IRL';
+    })() as EventFormat,
     category: (row.category || 'Community Meetup') as EventCategory,
     location: row.location || 'TBC',
     zoomUrl: row.zoom_url || undefined,

@@ -23,8 +23,8 @@ const statusBadge = {
 } as const;
 
 export function EventCard({ event, joined, onJoin }: EventCardProps) {
-  const f = formatBadge[event.format];
-  const s = statusBadge[event.status];
+  const f = formatBadge[event.format as keyof typeof formatBadge] ?? formatBadge['IRL'];
+  const s = statusBadge[event.status as keyof typeof statusBadge] ?? statusBadge['upcoming'];
   const fillPct = Math.min(100, Math.round((event.attendees / event.capacity) * 100));
 
   return (
@@ -49,7 +49,8 @@ export function EventCard({ event, joined, onJoin }: EventCardProps) {
 
       <div className="mt-3 flex flex-wrap gap-1">
         {event.tracks.map(t => {
-          const p = PERSONAS.find(x => x.id === t)!;
+          const p = PERSONAS.find(x => x.id === t);
+          if (!p) return null;
           return <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-[10px]">{p.emoji} {p.label}</span>;
         })}
       </div>
