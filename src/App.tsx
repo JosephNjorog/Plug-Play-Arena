@@ -16,6 +16,7 @@ import ProfilePage from "./pages/ProfilePage";
 import MissionPlayPage from "./pages/MissionPlayPage";
 import ChallengePage from "./pages/ChallengePage";
 import AuthPage from "./pages/AuthPage";
+import QuestsPage from "./pages/QuestsPage";
 import NotFound from "./pages/NotFound";
 import ArenaHostPage from "./pages/ArenaHostPage";
 import ArenaJoinPage from "./pages/ArenaJoinPage";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/challenge/:slug" element={<ChallengePage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/rewards" element={<RewardsPage />} />
+            <Route path="/quests" element={<QuestsPage />} />
             <Route path="/journey" element={<MyJourneyPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/arena" element={<ArenaLayout />}>

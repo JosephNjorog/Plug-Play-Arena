@@ -11,6 +11,7 @@ const NAV = [
   { to: '/library', label: 'Game Library' },
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/rewards', label: 'Rewards' },
+  { to: '/quests', label: 'Quests' },
   { to: '/journey', label: 'My Journey' },
 ];
 
