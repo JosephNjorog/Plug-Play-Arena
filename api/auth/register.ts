@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
-import { getDb } from '../_lib/db';
-import { signToken } from '../_lib/auth';
-import { readBody, json, handleCors } from '../_lib/cors';
+import { getDb } from '../_lib/db.js';
+import { signToken } from '../_lib/auth.js';
+import { readBody, json, handleCors } from '../_lib/cors.js';
 
 export default async function handler(req: any, res: any) {
   if (handleCors(req, res)) return;
