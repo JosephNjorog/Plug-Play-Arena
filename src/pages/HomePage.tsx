@@ -75,7 +75,7 @@ export default function HomePage() {
                 </Button>
               )}
               <Button size="lg" variant="secondary" asChild>
-                <Link to="/library">View game library</Link>
+                <Link to="/quests">Complete quests</Link>
               </Button>
             </div>
 
