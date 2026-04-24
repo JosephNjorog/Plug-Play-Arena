@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+
+// Minimal types matching Supabase's User / Session shape
+interface User { id: string; email: string; user_metadata: Record<string, any>; app_metadata: Record<string, any> }
+interface Session { user: User; access_token: string }
 import { Persona, AvalancheGame } from './avalanche';
 import { difficultyMultiplier, rarityFor } from './scoring';
 
