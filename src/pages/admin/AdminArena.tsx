@@ -150,12 +150,12 @@ export default function AdminArena() {
                   <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-muted-foreground">No arena sessions yet.</td></tr>
                 ) : sessions.map(s => (
                   <tr key={s.id} className="hover:bg-muted/20">
-                    <td className="px-4 py-3 font-mono font-bold text-primary">{s.code}</td>
-                    <td className="px-4 py-3 text-xs capitalize">{s.topic?.replace(/_/g, ' ')}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-primary">{s.join_code}</td>
+                    <td className="px-4 py-3 text-xs capitalize">—</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_PILL[s.status] ?? ''}`}>{s.status}</span>
                     </td>
-                    <td className="px-4 py-3 text-xs">{s.round_index}</td>
+                    <td className="px-4 py-3 text-xs">{s.current_question_index}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-right">
                       {s.status !== 'ended' && (
@@ -207,10 +207,10 @@ export default function AdminArena() {
                 {filteredQs.map(q => (
                   <tr key={q.id} className="hover:bg-muted/20">
                     <td className="px-4 py-3 max-w-xs">
-                      <div className="truncate">{q.question}</div>
+                      <div className="truncate">{q.question_text}</div>
                     </td>
                     <td className="px-4 py-3 text-xs capitalize text-muted-foreground">{q.topic.replace(/_/g, ' ')}</td>
-                    <td className="px-4 py-3 text-xs text-green-400">{q.options[q.answer]}</td>
+                    <td className="px-4 py-3 text-xs text-green-400">{q.correct_answer}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button size="sm" variant="ghost" onClick={() => openEditQ(q)}><Pencil className="h-3.5 w-3.5" /></Button>
