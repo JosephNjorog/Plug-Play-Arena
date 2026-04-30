@@ -3,11 +3,29 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AppNavbar } from '@/components/avalanche/AppNavbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { GameCard } from '@/components/avalanche/GameCard';
 import { AvalancheEvent, AvalancheGame, dbRowToEvent, dbRowToGame, PERSONAS } from '@/lib/avalanche';
 import { usePlayer } from '@/lib/playerContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Calendar, MapPin, Trophy, Users, Video } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Trophy, Users, Video, CheckCircle2, Clock, XCircle, Sparkles, Lock } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface EventQuest {
+  id: string;
+  title: string;
+  description: string;
+  emoji: string;
+  evidence_kind: string;
+  placeholder: string;
+  xp_reward: number;
+  sort_order: number;
+}
+interface QuestSub {
+  quest_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  xp_awarded: number;
+}
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -19,6 +37,10 @@ export default function EventDetailPage() {
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
+  const [eventQuests, setEventQuests] = useState<EventQuest[]>([]);
+  const [questSubs, setQuestSubs] = useState<Map<string, QuestSub>>(new Map());
+  const [questAnswers, setQuestAnswers] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -58,6 +80,25 @@ export default function EventDetailPage() {
       .then(({ data }) => setJoined(!!data));
   }, [user, id]);
 
+  useEffect(() => {
+    if (!id) return;
+    supabase.from('quests').select('*').eq('event_id', id).eq('is_active', true).order('sort_order', { ascending: true })
+      .then(({ data }) => { if (data) setEventQuests(data as EventQuest[]); });
+  }, [id]);
+
+  useEffect(() => {
+    if (!user || eventQuests.length === 0) return;
+    const ids = eventQuests.map(q => q.id);
+    supabase.from('quest_submissions').select('quest_id,status,xp_awarded').eq('user_id', user.id).in('quest_id', ids)
+      .then(({ data }) => {
+        if (data) {
+          const m = new Map<string, QuestSub>();
+          (data as QuestSub[]).forEach(s => m.set(s.quest_id, s));
+          setQuestSubs(m);
+        }
+      });
+  }, [user, eventQuests]);
+
   if (event === undefined) {
     return (
       <div className="min-h-screen">
@@ -86,6 +127,29 @@ export default function EventDetailPage() {
     setJoined(true);
     setParticipantCount(c => c + 1);
     setJoining(false);
+  }
+
+  async function handleQuestSubmit(quest: EventQuest) {
+    if (!user) { toast.error('Sign in to complete quests'); return; }
+    const evidence = quest.evidence_kind === 'none' ? 'completed' : (questAnswers[quest.id] ?? '').trim();
+    if (quest.evidence_kind !== 'none' && !evidence) { toast.error('Please enter your answer first'); return; }
+    setSubmitting(quest.id);
+    try {
+      const token = localStorage.getItem('ppa_token');
+      const res = await fetch('/api/quests/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ quest_id: quest.id, evidence: evidence || 'completed' }),
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setQuestSubs(prev => new Map(prev).set(quest.id, { quest_id: quest.id, status: 'approved', xp_awarded: quest.xp_reward }));
+      toast.success(`+${quest.xp_reward} XP earned!`);
+    } catch (e: any) {
+      toast.error(e.message ?? 'Submission failed');
+    } finally {
+      setSubmitting(null);
+    }
   }
 
   return (
@@ -132,16 +196,87 @@ export default function EventDetailPage() {
       </div>
 
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <h2 className="font-display text-xl tracking-wider">Event missions</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Complete to earn XP, NFTs, and rewards.</p>
-          {missions.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">No missions configured for this event yet.</p>
-          ) : (
-            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-              {missions.map(g => (
-                <GameCard key={g.id} game={g} onPlay={() => navigate(`/play/${g.id}?event=${event.id}`)} />
-              ))}
+        <div className="lg:col-span-2 space-y-10">
+
+          {/* Event Quests */}
+          {eventQuests.length > 0 && (
+            <div>
+              <h2 className="font-display text-xl tracking-wider">Event quests</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Complete all quests to earn XP and rewards — exclusive to this event.</p>
+              {!user && (
+                <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  <Lock className="h-4 w-4 shrink-0" /> Sign in to complete these quests and earn XP.
+                </div>
+              )}
+              <div className="mt-4 space-y-3">
+                {eventQuests.map((quest, qi) => {
+                  const sub = questSubs.get(quest.id);
+                  const done = sub?.status === 'approved';
+                  const pending = sub?.status === 'pending';
+                  return (
+                    <div key={quest.id} className={`rounded-xl border p-5 transition-colors ${done ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'}`}>
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted font-display text-sm text-muted-foreground">
+                          {qi + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-lg">{quest.emoji}</span>
+                            <h3 className="font-medium text-sm">{quest.title}</h3>
+                            {done && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+                            {pending && <Clock className="h-4 w-4 text-yellow-500 shrink-0" />}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">{quest.description}</p>
+                          <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <Sparkles className="h-3 w-3 text-primary" />{quest.xp_reward} XP
+                          </div>
+                          {!done && user && (
+                            <div className="mt-3 flex gap-2">
+                              {quest.evidence_kind !== 'none' && (
+                                <Input
+                                  className="h-8 text-xs"
+                                  placeholder={quest.placeholder}
+                                  value={questAnswers[quest.id] ?? ''}
+                                  onChange={e => setQuestAnswers(p => ({ ...p, [quest.id]: e.target.value }))}
+                                />
+                              )}
+                              <Button
+                                size="sm"
+                                className="shrink-0"
+                                disabled={submitting === quest.id}
+                                onClick={() => handleQuestSubmit(quest)}
+                              >
+                                {submitting === quest.id ? 'Submitting…' : quest.evidence_kind === 'none' ? 'Mark complete' : 'Submit'}
+                              </Button>
+                            </div>
+                          )}
+                          {done && <p className="mt-2 text-[11px] text-primary">+{sub!.xp_awarded} XP earned ✓</p>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Game Missions */}
+          {missions.length > 0 && (
+            <div>
+              <h2 className="font-display text-xl tracking-wider">Event missions</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Complete to earn XP, NFTs, and rewards.</p>
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                {missions.map(g => (
+                  <GameCard key={g.id} game={g} onPlay={() => navigate(`/play/${g.id}?event=${event.id}`)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {eventQuests.length === 0 && missions.length === 0 && (
+            <div>
+              <h2 className="font-display text-xl tracking-wider">Event missions</h2>
+              <p className="mt-4 text-sm text-muted-foreground">No missions configured for this event yet.</p>
             </div>
           )}
         </div>
